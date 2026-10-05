@@ -84,7 +84,35 @@ Cette commande exige l’adresse du compte existant et une nouvelle phrase de pa
 
 ## Sauvegardes
 
-Exportez régulièrement un JSON depuis l’application. Pour sauvegarder aussi le compte, utilisez une sauvegarde SQLite cohérente ; une copie du seul fichier `.sqlite` pendant que le serveur fonctionne peut omettre le journal WAL. Le plus simple pour un atelier personnel est d’arrêter le serveur puis de sauvegarder le répertoire de données protégé. Testez vos restaurations et protégez ces copies, qui incluent les données privées et les empreintes de mots de passe.
+Les exports et imports **JSON existants restent disponibles** dans Réglages & sauvegardes : ils sauvegardent l’atelier, sans le compte administrateur. Pour sauvegarder toute la base (atelier, révision, compte et empreinte de mot de passe, sessions et limitations), utilisez depuis la racine du projet :
+
+```sh
+npm run backup -- .backups/clinique-2026-10-05.sqlite
+```
+
+Choisissez un nouveau nom à chaque exécution. La commande charge `.env` comme le serveur et utilise le même `DATABASE_PATH` (par défaut `data/clinique.sqlite`). Les chemins relatifs de source et destination partent de la racine du projet ; les chemins absolus sont acceptés. La destination doit finir par `.sqlite`. Aucun serveur, compte de test ou compilation de l’interface n’est nécessaire.
+
+Le serveur peut rester en fonctionnement. La commande ouvre la source existante en lecture seule et utilise **`VACUUM INTO`**, qui produit un instantané transactionnel cohérent incluant les données validées présentes dans le WAL. Elle n’initialise pas la base, ne copie pas le seul fichier principal et n’exige pas de checkpoint préalable. Les transactions non validées et les changements postérieurs à l’instantané ne sont pas inclus. Voir la [documentation SQLite](https://www.sqlite.org/lang_vacuum.html#vacuum_with_an_into_clause).
+
+La sauvegarde est d’abord créée dans un dossier temporaire privé à côté de la destination, puis vérifiée avec `PRAGMA integrity_check` et `PRAGMA foreign_key_check`. Elle est publiée par lien physique atomique uniquement après validation, sans écraser de fichier ou lien existant. Le fichier final est autonome : aucun `-wal` ou `-shm` n’est à transporter. Les erreurs donnent un code de sortie non nul et les fichiers temporaires sont nettoyés lors d’une sortie normale. Après une interruption brutale, un dossier `.backup-*` peut subsister : ce n’est pas une sauvegarde publiée et il peut être supprimé une fois la commande arrêtée.
+
+Utilisez un disque local persistant supportant les liens physiques, avec assez d’espace pour l’instantané. Sous Unix, les nouveaux dossiers sont privés et le fichier final a les permissions `0600`. Protégez également le dossier parent et les ACL sous Windows. Ces sauvegardes ne sont pas chiffrées et contiennent des données privées et des empreintes de mots de passe. Conservez une copie protégée sur un autre support et définissez votre fréquence et votre rétention ; cette commande ne programme ni transfert ni purge. Les bases, leurs journaux et `.backups/` sont exclus de Git. Ne placez aucune sauvegarde dans `dist/` ou un dossier servi publiquement.
+
+### Restaurer une sauvegarde complète
+
+1. Arrêtez toutes les instances du serveur et les commandes utilisant cette base. Conservez le répertoire de données actuel complet, y compris ses éventuels journaux, à un autre emplacement privé pour pouvoir revenir en arrière.
+2. Vérifiez la sauvegarde sur une copie temporaire avec `PRAGMA integrity_check` (`ok` attendu) et `PRAGMA foreign_key_check` (aucune ligne attendue). Le test automatisé ci-dessous démontre cette restauration avec des données synthétiques ; il ne remplace pas la vérification de vos propres copies.
+3. Placez le seul fichier sauvegardé au chemin `DATABASE_PATH`, dans un répertoire privé. Aucun ancien fichier `-wal`, `-shm` ou `-journal` ne doit rester à côté du fichier restauré : archivez-les avec l’ancienne base avant le remplacement, serveur arrêté. Rétablissez le propriétaire du service et les permissions du fichier (`0600` sous Unix).
+4. Avant de rouvrir le serveur, lancez `npm run admin:reset` avec le même `DATABASE_PATH` et l’adresse du compte de la sauvegarde. Choisissez une nouvelle phrase de passe : cette opération conserve l’atelier et révoque les sessions restaurées, qui pourraient sinon redevenir utilisables.
+5. Lancez `npm start`, connectez-vous puis vérifiez l’inventaire, les réparations et les photos. Une restauration complète remplace aussi le compte et revient à l’état sauvegardé ; les modifications ultérieures sont perdues.
+
+Test reproductible sans données réelles, uniquement dans un répertoire temporaire supprimé à la fin :
+
+```sh
+npm run test:backup
+```
+
+Ce test conserve une connexion WAL ouverte, prouve qu’une copie brute omet des écritures, exécute la commande réelle, restaure le fichier dans une nouvelle base temporaire et vérifie son intégrité, ses données et son indépendance de la source. Il couvre aussi les erreurs et l’absence d’écrasement. Il est inclus dans `npm test` et donc dans la CI.
 
 ## Développement
 
@@ -106,7 +134,7 @@ npm run typecheck
 npm run build
 ```
 
-Les tests couvrent le métier et l’API d’authentification. La CI GitHub exécute les tests, le contrôle TypeScript et la compilation Vite. Les fichiers générés et les dépendances ne sont pas versionnés.
+Les tests couvrent le métier, l’API d’authentification et la sauvegarde/restauration SQLite. La CI GitHub exécute les tests, le contrôle TypeScript et la compilation Vite. Les fichiers générés et les dépendances ne sont pas versionnés.
 
 `build:offline` échoue volontairement avec une explication : une administration authentifiée n’a pas de mode HTML autonome sans serveur. L’ancienne édition séparée reste un produit local sans cette protection, pas une porte d’accès à la nouvelle base.
 

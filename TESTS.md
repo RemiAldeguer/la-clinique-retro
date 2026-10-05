@@ -11,6 +11,10 @@ Les 52 tests ont été exécutés localement avec succès lors de l’ajout de l
 
 La CI vérifie aussi les types et la compilation Vite. Consulter le résultat du workflow associé au commit pour son état réel.
 
+## Sauvegarde et restauration SQLite
+
+`npm run test:backup` exécute trois tests sans dépendance externe et sans données réelles. Ils sont aussi inclus dans `npm test` : instantané d’une base WAL ouverte avec écritures validées et transaction non validée, restauration autonome dans une base temporaire, intégrité et références, conservation du compte et des tables serveur, indépendance de la source, permissions Unix, refus des arguments invalides et des sources absentes ou corrompues, refus d’écraser une destination et nettoyage des fichiers temporaires. Tous les fichiers de test sont synthétiques et supprimés après exécution.
+
 ## Limites
 
 Ces tests ne constituent ni un audit indépendant ni un test d’intrusion exhaustif. Le parcours visuel Chromium n’a pas pu être exécuté dans l’environnement de préparation : la navigation locale était bloquée par la politique du navigateur. Les comportements d’interface, d’accessibilité, de synchronisation d’onglets, d’import volumineux et de déploiement HTTPS doivent également être vérifiés sur l’hébergement cible.
