@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+tests/.compiled/
+tests/output/
+clinique-retro-sauvegarde-*.json
+clinique-retro-recuperation.*
+inventaire-clinique-retro-*.csv

@@ -1,0 +1,24 @@
+{
+  "name": "la-clinique-retro",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Inventaire de consoles et gestion d’atelier, avec stockage local.",
+  "type": "module",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "start": "node scripts/serve.mjs",
+    "build:offline": "npm run typecheck && node scripts/build-offline.mjs",
+    "pretest": "node scripts/compile-tests.cjs",
+    "test": "node --test tests/domain.test.cjs"
+  },
+  "dependencies": { "react": "19.1.1", "react-dom": "19.1.1" },
+  "devDependencies": {
+    "@types/react": "^19.1.0", "@types/react-dom": "^19.1.0",
+    "typescript": "5.8.3", "vite": "^7.1.0", "@vitejs/plugin-react": "^5.0.0",
+    "esbuild": "0.25.9"
+  }
+}
