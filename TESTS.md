@@ -1,27 +1,20 @@
-# Validation et limites
+# Validation
 
-## Rejouer les tests
+## Tests automatisés
 
-```sh
-npm install
-npm test
-npm run typecheck
-npm run build
-npm run build:offline
-```
+`npm test` compile les règles métier existantes puis exécute les tests Node.js, sans service externe.
 
-`npm test` recompile les modules `domain.ts` et `seed.ts` dans `tests/.compiled/`, puis exécute les 32 tests de `tests/domain.test.cjs`. Les fichiers compilés ne sont pas versionnés.
+- 32 tests métier : transitions, clôture, stocks, chronomètre, calculs, imports et exports.
+- 20 tests de sécurité et d’intégration serveur : hachage avec sel, origine et HTTPS, accès anonyme refusé, absence de création publique de compte, erreurs génériques, cookies et empreinte de session, CSRF, persistance, validation, conflits de révision, limites JSON, déconnexion, expiration absolue et inactive, limitation des tentatives, changement de mot de passe et révocation des sessions, en-têtes et cloisonnement des fichiers.
 
-La suite vérifie les données de démonstration et l’atelier vide, l’unicité des réparations ouvertes, le cycle de vie, les tests de clôture, les réouvertures, la consommation et le retour des pièces, le gel des coûts, le chronomètre, les montants, la validation d’import et la neutralisation des formules CSV.
+Les 52 tests ont été exécutés localement avec succès lors de l’ajout de l’authentification, sous Node 22.16.0. Les identifiants fixes dans les tests sont uniquement des fixtures synthétiques ; l’application ne les installe jamais au démarrage.
 
-## Livraison initiale
+La CI vérifie aussi les types et la compilation Vite. Consulter le résultat du workflow associé au commit pour son état réel.
 
-L’édition HTML initialement livrée a réussi 32 tests métier et 24 vérifications d’interface sous Chromium. Les parcours d’interface utilisaient un stockage simulé et des interceptions de téléchargements : ils ne validaient pas la persistance réelle à une origine, les téléchargements natifs ou le dialogue d’impression.
+## Limites
 
-Les dépendances npm n’ont pas pu être téléchargées dans l’environnement initial. La publication GitHub conserve les sources métier et d’interface, mais remplace le runtime React précompilé par une construction depuis npm. Le script de construction autonome utilise esbuild pour incorporer JavaScript et CSS.
+Ces tests ne constituent ni un audit indépendant ni un test d’intrusion exhaustif. Le parcours visuel Chromium n’a pas pu être exécuté dans l’environnement de préparation : la navigation locale était bloquée par la politique du navigateur. Les comportements d’interface, d’accessibilité, de synchronisation d’onglets, d’import volumineux et de déploiement HTTPS doivent également être vérifiés sur l’hébergement cible.
 
-## Vérification sur le navigateur utilisé au quotidien
+## Recette de déploiement
 
-Créez une console, fermez puis rouvrez l’application à la même adresse et dans le même profil. Vérifiez la persistance, exportez une sauvegarde JSON, restaurez-la et imprimez un dossier. Testez les photos et surveillez le quota local avant de saisir une collection volumineuse.
-
-La suite métier ne remplace pas ces contrôles réels sur Safari, Firefox ou un téléphone. Il n’y a pas de validation multi-utilisateur ni de backend dans cette version.
+Créer le compte depuis le terminal du serveur, vérifier la connexion et le refus d’un mot de passe incorrect, ajouter une console et recharger la page, tester l’import d’une copie de sauvegarde, se déconnecter puis appeler directement `/api/store` (401 attendu). Vérifier le cookie `Secure` sous HTTPS et l’absence de secrets dans le bundle. Modifier le mot de passe et vérifier que les sessions précédentes ne donnent plus accès à l’API. Tester la sauvegarde et la restauration du volume SQLite.

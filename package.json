@@ -1,24 +1,30 @@
 {
   "name": "la-clinique-retro",
   "private": true,
-  "version": "1.0.0",
-  "description": "Inventaire de consoles et gestion d’atelier, avec stockage local.",
+  "version": "2.0.0",
+  "description": "Atelier de réparation avec administration authentifiée et stockage serveur.",
   "type": "module",
-  "engines": { "node": ">=22.12.0" },
+  "engines": { "node": ">=22.16.0" },
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "predev:server": "node scripts/compile-domain.cjs",
+    "dev:server": "node --env-file-if-exists=.env scripts/dev-server.mjs",
     "typecheck": "tsc --noEmit",
-    "build": "npm run typecheck && vite build",
-    "preview": "vite preview --host 127.0.0.1",
-    "start": "node scripts/serve.mjs",
-    "build:offline": "npm run typecheck && node scripts/build-offline.mjs",
-    "pretest": "node scripts/compile-tests.cjs",
-    "test": "node --test tests/domain.test.cjs"
+    "build": "node scripts/compile-domain.cjs && npm run typecheck && vite build",
+    "preview": "npm start",
+    "prestart": "node scripts/compile-domain.cjs",
+    "start": "node --env-file-if-exists=.env server/index.mjs",
+    "build:offline": "node scripts/build-offline.mjs",
+    "pretest": "node scripts/compile-domain.cjs",
+    "test": "node --test tests/domain.test.cjs tests/auth.test.mjs",
+    "preadmin:create": "node scripts/compile-domain.cjs",
+    "admin:create": "node --env-file-if-exists=.env scripts/admin.mjs create",
+    "preadmin:reset": "node scripts/compile-domain.cjs",
+    "admin:reset": "node --env-file-if-exists=.env scripts/admin.mjs reset"
   },
   "dependencies": { "react": "19.1.1", "react-dom": "19.1.1" },
   "devDependencies": {
     "@types/react": "^19.1.0", "@types/react-dom": "^19.1.0",
-    "typescript": "5.8.3", "vite": "^7.1.0", "@vitejs/plugin-react": "^5.0.0",
-    "esbuild": "0.25.9"
+    "typescript": "5.8.3", "vite": "^7.1.0", "@vitejs/plugin-react": "^5.0.0"
   }
 }
